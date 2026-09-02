@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nyapath — Audit tab preview</title>
+<style>
+:root { color-scheme: light;
+  --cream:#F7F4EC; --navy:#1C2333; --blue:#3A5A78;
+  --amber:#C6742B; --green:#5C7A5E; --gold:#B8923C;
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--cream); color:var(--navy);
+  font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif; }
+.grid-bg { position:fixed; inset:0; opacity:.03; pointer-events:none;
+  background-image:linear-gradient(var(--navy) 1px,transparent 1px),linear-gradient(90deg,var(--navy) 1px,transparent 1px);
+  background-size:20px 20px; }
+.mono { font-family: ui-monospace, "IBM Plex Mono", Consolas, monospace; }
+.serif { font-family: Georgia, "Fraunces", serif; }
+.wrap { position:relative; max-width:920px; margin:0 auto; padding:24px 20px 64px; }
+
+.note { border:1px solid var(--navy); border-left:4px solid var(--amber);
+  padding:12px 16px; margin-bottom:24px; font-size:13px; line-height:1.6; }
+
+/* topbar */
+.topbar { display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--navy); padding-bottom:12px; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+.topbar h1 { font-size:20px; margin:0; font-weight:700; }
+.badge { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--green);
+  color:var(--green); padding:4px 8px; font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.15em; }
+.badge i { width:6px; height:6px; background:var(--green); display:block; }
+
+/* state switcher */
+.switch { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+.switch button { border:1px solid var(--navy); background:transparent; color:var(--blue);
+  padding:8px 14px; font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.12em; cursor:pointer; font-family:inherit; }
+.switch button.on { background:var(--navy); color:var(--cream); }
+
+/* cards */
+.cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:28px; }
+@media (max-width:760px){ .cards{ grid-template-columns:1fr; } }
+.card { border:1px solid var(--navy); padding:20px; }
+.card .lab { display:flex; justify-content:space-between; border-bottom:1px solid var(--navy);
+  padding-bottom:8px; margin-bottom:14px; font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.15em; color:var(--blue); }
+.card .big { font-size:34px; font-weight:700; line-height:1; }
+.card .big small { font-size:15px; color:var(--blue); }
+.card .sub { margin-top:8px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+.sub.amber { color:var(--amber); } .sub.green { color:var(--green); } .sub.blue { color:var(--blue); }
+
+/* panel */
+.panel { border:1px solid var(--navy); }
+.panel > header { padding:24px; border-bottom:1px solid var(--navy); }
+.panel > header h2 { margin:0 0 6px; font-size:22px; }
+.panel > header p { margin:0; color:var(--blue); font-size:14px; line-height:1.6; }
+.panel .body { padding:24px; }
+
+.drop { border:1px dashed var(--navy); padding:44px 20px; text-align:center;
+  margin-bottom:20px; cursor:pointer; }
+.drop.busy { opacity:.6; cursor:wait; }
+.drop .icon { width:60px; height:60px; border:1px solid var(--navy); margin:0 auto 14px;
+  display:flex; align-items:center; justify-content:center; font-size:22px; }
+.drop .icon.spin { animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.drop .title { font-weight:700; font-size:17px; margin-bottom:4px; }
+.drop .hint { font-size:12px; color:var(--blue); text-transform:uppercase; letter-spacing:.08em; }
+.chips { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+.chip { border:1px solid var(--navy); padding:4px 8px; font-size:10px;
+  text-transform:uppercase; letter-spacing:.12em; }
+
+.empty { text-align:center; color:var(--blue); font-size:12px;
+  text-transform:uppercase; letter-spacing:.1em; }
+
+.err { border:1px solid var(--amber); padding:16px; display:flex; gap:12px; }
+.err .k { color:var(--amber); font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.15em; margin-bottom:4px; }
+.err p { margin:0; font-size:14px; }
+
+/* report */
+.report { border:1px solid var(--amber); }
+.report.clean { border-color:var(--green); }
+.report .head { display:flex; justify-content:space-between; align-items:center;
+  padding:14px 20px; border-bottom:1px solid var(--amber); flex-wrap:wrap; gap:10px; }
+.report.clean .head { border-bottom-color:var(--green); }
+.report .head strong { color:var(--amber); font-size:13px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.15em; }
+.report.clean .head strong { color:var(--green); }
+.report .count { border:1px solid var(--amber); color:var(--amber); padding:4px 10px;
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; }
+.report.clean .count { border-color:var(--green); color:var(--green); }
+.report .items { padding:20px; display:flex; flex-direction:column; gap:20px; }
+.gap { display:flex; gap:16px; }
+.gap .num { width:32px; height:32px; border:1px solid; flex:none; margin-top:4px;
+  display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; }
+.gap .sev { border:1px solid; padding:1px 7px; font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.12em; }
+.gap .meta { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
+.gap .doc { font-size:10px; color:var(--blue); text-transform:uppercase; letter-spacing:.12em; }
+.gap h4 { margin:0; font-size:17px; }
+.gap p { margin:5px 0 0; font-size:14px; line-height:1.65; }
+.gap .link { margin-top:10px; font-size:12px; font-weight:700; color:var(--blue);
+  text-transform:uppercase; letter-spacing:.08em; }
+.report footer { padding:10px 20px; border-top:1px dashed var(--navy); font-size:10px;
+  color:var(--blue); text-transform:uppercase; letter-spacing:.15em; }
+
+.req { margin-top:28px; border:1px solid var(--navy); padding:16px; font-size:12px;
+  line-height:1.8; overflow-x:auto; white-space:pre; }
+.req b { color:var(--amber); }
+.hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="wrap">
+
+<div class="note">
+  <strong>Static preview, not the running app.</strong> Hand-built HTML that mirrors the markup and palette
+  of the Audit tab I wired in <span class="mono">Dashboard.jsx</span>, driven by a mocked
+  <span class="mono">/api/audit</span> response. Typography differs (Fraunces / IBM Plex Mono are loaded from
+  Google Fonts in the real app). Use the buttons to step through the four states the real component renders.
+</div>
+
+<div class="topbar">
+  <h1 class="serif">Pre-Submission Document Audit</h1>
+  <span class="badge"><i></i>Live AI</span>
+</div>
+
+<div class="switch">
+  <button data-state="idle" class="on">Idle</button>
+  <button data-state="busy">Uploading</button>
+  <button data-state="gaps">Gaps found</button>
+  <button data-state="clean">No gaps</button>
+  <button data-state="error">Backend down</button>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="lab"><span>Compliance Score</span><span>◈</span></div>
+    <div class="big" id="score">—<small>/100</small></div>
+    <div class="sub amber" id="scoreSub">Run document audit →</div>
+  </div>
+  <div class="card">
+    <div class="lab"><span>Total Clearances</span><span>▤</span></div>
+    <div class="big">5</div>
+    <div class="sub blue">Across 5 Departments</div>
+  </div>
+  <div class="card">
+    <div class="lab"><span>Estimated Timeline</span><span>◷</span></div>
+    <div class="big">4 <small>Months</small></div>
+    <div class="sub amber">120 days · 3 on critical path</div>
+  </div>
+</div>
+
+<div class="panel">
+  <header>
+    <h2 class="serif">AI Pre-Submission Audit</h2>
+    <p>Upload your draft filings before applying. Llama-3 reads each document and flags missing
+       annexures, incomplete forms, and non-compliant details.</p>
+  </header>
+  <div class="body">
+
+    <div class="drop" id="drop">
+      <div class="icon" id="dropIcon">⌕</div>
+      <div class="title serif" id="dropTitle">Upload your draft documents</div>
+      <div class="hint mono">Text-based PDF only · Scans need OCR first</div>
+      <div class="chips hidden" id="chips">
+        <span class="chip mono">MPCB_Consent_Draft.pdf</span>
+        <span class="chip mono">Factory_Layout_v3.pdf</span>
+      </div>
+    </div>
+
+    <p class="empty mono" id="emptyMsg">No audit run yet — upload a document to generate a gap report.</p>
+
+    <div class="err hidden" id="errBox">
+      <span style="color:var(--amber)">⚠</span>
+      <div>
+        <div class="k mono">Audit unavailable</div>
+        <p>Network Error</p>
+      </div>
+    </div>
+
+    <div id="reportSlot"></div>
+
+  </div>
+</div>
+
+<div class="req mono" id="reqLine"></div>
+
+</div>
+<script>
+const GAPS = [
+  { clearance_id:'clr_003', document_name:'MPCB_Consent_Draft.pdf', severity:'high',
+    issue:'Effluent Treatment Plant capacity not specified',
+    recommendation:'State designed ETP capacity in KLD and attach the RO module spec sheet before filing Form-1.',
+    linked:'Consent to Establish (MPCB)' },
+  { clearance_id:'clr_004', document_name:'Factory_Layout_v3.pdf', severity:'medium',
+    issue:'Emergency exit width shown as 1.2 m',
+    recommendation:'Maharashtra Fire Prevention rules require a 1.5 m minimum for industrial units. Revise the layout.',
+    linked:'Fire Safety NOC (Fire Dept)' },
+  { clearance_id:'', document_name:'Factory_Layout_v3.pdf', severity:'low',
+    issue:'Board resolution is unsigned',
+    recommendation:'Attach the signed and dated resolution authorising the application.', linked:null },
+];
+const SEV = { high:['#C6742B','High'], critical:['#C6742B','Critical'],
+              medium:['#B8923C','Medium'], low:['#3A5A78','Low'] };
+const sev = s => SEV[String(s||'').toLowerCase()] || ['#1C2333', s||'Note'];
+
+const el = id => document.getElementById(id);
+
+function report(gaps, compliant, auditId) {
+  const clean = gaps.length === 0;
+  const items = gaps.map((g,i) => {
+    const [c,label] = sev(g.severity);
+    return `<div class="gap">
+      <div class="num mono" style="border-color:${c};color:${c}">${i+1}</div>
+      <div>
+        <div class="meta">
+          <span class="sev mono" style="border-color:${c};color:${c}">${label}</span>
+          <span class="doc mono">${g.document_name}</span>
+        </div>
+        <h4 class="serif">${g.issue}</h4>
+        <p>${g.recommendation}</p>
+        ${g.linked ? `<div class="link mono">▤ Blocks: ${g.linked}</div>` : ''}
+      </div></div>`;
+  }).join('');
+  return `<div class="report ${clean?'clean':''}">
+    <div class="head">
+      <strong class="mono">${clean?'✓':'⚠'} Gap report generated</strong>
+      <span class="count mono">${gaps.length} ${gaps.length===1?'issue':'issues'} · 2 docs</span>
+    </div>
+    <div class="items">
+      ${clean ? `<p style="margin:0;font-size:14px">No gaps detected. ${compliant} compliance checks passed against the ingested Maharashtra regulations.</p>` : items}
+    </div>
+    <footer class="mono">Audit ${auditId} · roadmap rm_ab12cd</footer>
+  </div>`;
+}
+
+const REQ = {
+  idle:  'awaiting file selection',
+  busy:  'POST /api/audit?roadmap_id=rm_ab12cd\nContent-Type: multipart/form-data; boundary=…\n  files: MPCB_Consent_Draft.pdf\n  files: Factory_Layout_v3.pdf',
+  gaps:  '200 OK  {"audit_id":"au_7f3c1","roadmap_id":"rm_ab12cd","documents_analyzed":2,\n         "gaps":[…3 items…],"compliant_count":9,"gap_count":3}',
+  clean: '200 OK  {"audit_id":"au_2b9e4","roadmap_id":"rm_ab12cd","documents_analyzed":2,\n         "gaps":[],"compliant_count":11,"gap_count":0}',
+  error: 'ERR_NETWORK — uvicorn not running. Component keeps the roadmap intact and\n         shows the amber "Audit unavailable" banner instead of white-screening.',
+};
+
+function render(state) {
+  const busy = state === 'busy';
+  el('drop').className = 'drop' + (busy ? ' busy' : '');
+  el('dropIcon').textContent = busy ? '◌' : '⌕';
+  el('dropIcon').className = 'icon' + (busy ? ' spin' : '');
+  el('dropTitle').textContent = busy ? 'Auditing against regulations…' : 'Upload your draft documents';
+  el('chips').className = (state === 'idle') ? 'chips hidden' : 'chips';
+
+  el('emptyMsg').className = (state === 'idle') ? 'empty mono' : 'empty mono hidden';
+  el('errBox').className = (state === 'error') ? 'err' : 'err hidden';
+
+  let html = '';
+  if (state === 'gaps')  html = report(GAPS, 9, 'au_7f3c1');
+  if (state === 'clean') html = report([], 11, 'au_2b9e4');
+  el('reportSlot').innerHTML = html;
+
+  if (state === 'gaps')       { el('score').innerHTML = '75<small>/100</small>'; el('scoreSub').textContent = '3 gaps to close'; el('scoreSub').className = 'sub amber'; }
+  else if (state === 'clean') { el('score').innerHTML = '100<small>/100</small>'; el('scoreSub').textContent = 'Ready to file'; el('scoreSub').className = 'sub green'; }
+  else                        { el('score').innerHTML = '—<small>/100</small>'; el('scoreSub').textContent = 'Run document audit →'; el('scoreSub').className = 'sub amber'; }
+
+  el('reqLine').innerHTML = '<b>request / response</b>\n' + REQ[state];
+}
+
+document.querySelectorAll('.switch button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.switch button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    render(b.dataset.state);
+  });
+});
+render('idle');
+</script>
+</body>
+</html>

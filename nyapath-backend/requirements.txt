@@ -1,0 +1,21 @@
+fastapi>=0.103.0
+uvicorn>=0.23.2
+sqlalchemy>=2.0.20
+pydantic>=2.3.0
+pydantic-settings>=2.0.3
+python-dotenv>=1.0.0
+python-multipart>=0.0.6
+langchain>=0.1.0
+langchain-groq>=0.0.1
+langchain-anthropic>=0.1.0
+langchain-google-genai>=0.0.9
+chromadb>=0.4.22
+# rag_engine.py / load_knowledge.py import from langchain_community (Chroma,
+# FastEmbedEmbeddings, PyMuPDFLoader) and langchain_text_splitters. Neither is
+# pulled in by the `langchain` meta-package on 0.3.x, so they must be listed
+# explicitly or a fresh install ImportErrors on the first /api/roadmap call.
+langchain-community>=0.2.0
+langchain-text-splitters>=0.2.0
+fastembed>=0.3.0
+pymupdf>=1.23.0
+psycopg2-binary>=2.9.9
