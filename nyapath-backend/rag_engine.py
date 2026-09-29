@@ -133,7 +133,7 @@ def generate_roadmap_with_llm(industry_type: str, district: str, investment_scal
         context_text = "(No regulatory excerpts retrieved. Rely on general Maharashtra compliance knowledge.)"
 
     # 2. Setup LLM
-    llm = get_llm()
+    pass
 
     parser = JsonOutputParser(pydantic_object=RoadmapOutput)
 
@@ -158,6 +158,8 @@ def generate_roadmap_with_llm(industry_type: str, district: str, investment_scal
     chain = prompt | llm | parser
     
     try:
+        llm = get_llm()
+        chain = prompt | llm | parser
         result = chain.invoke({
             "context": context_text,
             "industry_type": industry_type,
