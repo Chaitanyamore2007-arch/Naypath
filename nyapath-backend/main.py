@@ -177,3 +177,13 @@ def match_schemes(req: SchemeRequest):
     import schemes_engine
     
     return schemes_engine.run_schemes_matcher(req.model_dump())
+
+@app.get("/api/debug")
+def debug():
+    try:
+        generate_roadmap(RoadmapRequest(industry_type="Manufacturing", district="Pune", investment_scale_crores=10, existing_land=False, unit_size="Medium"))
+        return {"status": "success"}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "traceback": traceback.format_exc()}
+
