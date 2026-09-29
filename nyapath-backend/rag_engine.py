@@ -158,6 +158,7 @@ def generate_roadmap_with_llm(industry_type: str, district: str, investment_scal
     
     try:
         llm = get_llm()
+        chain = prompt | llm | parser
         result = chain.invoke({
             "context": context_text,
             "industry_type": industry_type,
