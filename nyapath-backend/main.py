@@ -104,7 +104,7 @@ def health_check():
     return {"status": "ok", "timestamp": datetime.datetime.utcnow().isoformat()}
 
 @app.post("/api/roadmap", response_model=RoadmapResponse)
-def generate_roadmap(req: RoadmapRequest, db: Session = Depends(get_db)):
+def generate_roadmap(req: RoadmapRequest):
     """
     Generates a compliance roadmap for a given industry profile using Groq/Langchain.
     """
@@ -124,7 +124,7 @@ def generate_roadmap(req: RoadmapRequest, db: Session = Depends(get_db)):
     return result
 
 @app.post("/api/audit")
-async def audit_documents(roadmap_id: str, files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
+async def audit_documents(roadmap_id: str, files: List[UploadFile] = File(...)):
     """
     Analyzes uploaded documents against required regulations for gap detection using LLM.
     """
@@ -157,7 +157,7 @@ async def audit_documents(roadmap_id: str, files: List[UploadFile] = File(...), 
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 @app.post("/api/chat")
-def chat_with_assistant(req: ChatRequest, db: Session = Depends(get_db)):
+def chat_with_assistant(req: ChatRequest):
     """
     RAG-grounded chatbot.
     """
@@ -170,7 +170,7 @@ def chat_with_assistant(req: ChatRequest, db: Session = Depends(get_db)):
     return chat_engine.run_chat(req.question, profile_dict, history_list)
 
 @app.post("/api/schemes")
-def match_schemes(req: SchemeRequest, db: Session = Depends(get_db)):
+def match_schemes(req: SchemeRequest):
     """
     Finds applicable incentives based on profile.
     """
